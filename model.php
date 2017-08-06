@@ -1,8 +1,9 @@
 <?php
-
+	
 	function open_database_connection() //Permet de se connecter avec la Base de données
 	{
 		$link = mysqli_connect('localhost', 'root', '', 'bdd_serious_game')or die("Impossible de se connecter : " . mysql_error());
+		mysqli_set_charset ($link, "utf8");
 		return $link;
 	}
 
@@ -60,7 +61,7 @@
 
 	/*VOIR http://beaussier.developpez.com/articles/php/mysql/blob/#LIII  POUR DE L'AIDE*/
 
-	function transfert()
+	function transfert() //transfert des fichier image dans la BDD
 	{
         $ret        = false;
         $img_blob   = '';
@@ -97,3 +98,49 @@
 	        return true;
         }
     }
+
+    function prepare_test($nom_util, $mot_de_passe, $nom_mat) // récupère les id des questions auquel un utilisateur n'a pas répondu en fonction de la matière
+    {
+    	$link = open_database_connection(); //Connexion a la base de données
+
+		$query= 'SELECT question.id_q FROM question, matiere WHERE matiere.id_mat =question.id_mat AND titre_mat = "'.$nom_mat.'" AND question.id_q NOT IN(SELECT question.id_q FROM question, matiere, a_repondue, utilisateur WHERE matiere.id_mat=question.id_mat AND question.id_q=a_repondue.id_q AND utilisateur.id_util =a_repondue.id_util AND titre_mat="'.$nom_mat.'" AND utilisateur.nom_util="'.$nom_util.'" AND utilisateur.mot_de_passe="'.$mot_de_passe.'")'; // Requete pour recuperer les question dans une matiere auquel l'utilisateur n'a jamais repondu
+		 
+		if($result = mysqli_query($link, $query ))// On lance la requete
+		{
+			while($val = mysqli_fetch_assoc($result)) // On récupère le résultat dans un tableau
+			{
+			$question[] = $val['id_q'];
+			}
+		}
+
+
+		mysqli_free_result($result); // On libère la variable result
+
+		close_database_connection($link);  // On se deconnecte de la BDD
+
+		return $question; // On rend le tableau
+    }
+
+    function affiche_Qs($result) // Transforme un tableau d'id de question en un tableau d'énoncé des même questions elle meme
+    {
+    	if($result != NULL)
+    	{
+    		$link = open_database_connection(); //Connexion a la base de données
+	    	$query= 'SELECT description FROM question Q WHERE Q.id_q IN ('.implode(',',$result).')'; //requete pour récuperer la description des questions implode permet de transformer un tableau en une table utilisable dans les requêtes SQL
+	    	if($res = mysqli_query($link, $query ))// On lance la requete
+			{
+				while($val = mysqli_fetch_assoc($res)) // On récupère le résultat dans un tableau
+				{
+				$question[] = $val['description'];
+				}
+				mysqli_free_result($res); // On libère la variable result
+			}
+			
+	    	return $question;// On rend le tableau
+    	}
+    }
+	/*//array_rand                //NOTE pour mon boulot
+    function recup_rep($result)
+    {
+
+    }*/
