@@ -121,17 +121,40 @@
 		return $question; // On rend le tableau
     }
 
-    function affiche_Qs($result) // Transforme un tableau d'id de question en un tableau d'énoncé des même questions elle meme
+    function prepare_defi($nom_util, $mot_de_passe, $nom_mat) // récupère les id des questions auquel un utilisateur n'a pas répondu en fonction de la matière
+    {
+    	$link = open_database_connection(); //Connexion a la base de données
+
+		$query= 'SELECT question.id_q FROM question, matiere, a_repondue, utilisateur WHERE matiere.id_mat=question.id_mat AND question.id_q=a_repondue.id_q AND utilisateur.id_util =a_repondue.id_util AND titre_mat="'.$nom_mat.'" AND utilisateur.nom_util="'.$nom_util.'" AND utilisateur.mot_de_passe="'.$mot_de_passe.'"'; // Requete pour recuperer les question dans une matiere auquel l'utilisateur a deja repondu
+		 
+		if($result = mysqli_query($link, $query ))// On lance la requete
+		{
+			while($val = mysqli_fetch_assoc($result)) // On récupère le résultat dans un tableau
+			{
+			$question[] = $val['id_q'];
+			}
+		}
+
+
+		mysqli_free_result($result); // On libère la variable result
+
+		close_database_connection($link);  // On se deconnecte de la BDD
+
+		return $question; // On rend le tableau
+    }
+
+    function affiche_Qs($result) // Transforme un tableau d'id de question en un tableau d'énoncé des même questions en conservant leurs id
     {
     	if($result != NULL)
     	{
     		$link = open_database_connection(); //Connexion a la base de données
-	    	$query= 'SELECT description FROM question Q WHERE Q.id_q IN ('.implode(',',$result).')'; //requete pour récuperer la description des questions implode permet de transformer un tableau en une table utilisable dans les requêtes SQL
+	    	$query= 'SELECT id_q, description FROM question Q WHERE Q.id_q IN ('.implode(',',$result).')'; //requete pour récuperer la description des questions implode permet de transformer un tableau en une table utilisable dans les requêtes SQL
 	    	if($res = mysqli_query($link, $query ))// On lance la requete
 			{
 				while($val = mysqli_fetch_assoc($res)) // On récupère le résultat dans un tableau
 				{
-				$question[] = $val['description'];
+				$question['id_q'][] = $val['id_q'];
+				$question['description'][] = $val['description'];
 				}
 				mysqli_free_result($res); // On libère la variable result
 			}
@@ -139,8 +162,73 @@
 	    	return $question;// On rend le tableau
     	}
     }
-	/*//array_rand                //NOTE pour mon boulot
+	//array_rand
     function recup_rep($result)
     {
+		if($result != NULL)
+    	{
+    		$reponse=NULL;
+    		$link = open_database_connection(); //Connexion a la base de données
+			foreach($result as $id) //Parcours du Tableau des id des questions
+			{
+				$query= 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q='.$id.' AND type_rep=1 AND R.id_r=RP.id_r'; //Requête pour récupérer la ou les réponses vrai de la question 
+				if($res = mysqli_query($link, $query ))// On lance la requete
+				{
+					$nb_rep=4-mysqli_num_rows($res); //si il y a des réponse vrai on calcule le nombre de réponse fausse qu'il faudrat ajouter
+					while($val = mysqli_fetch_assoc($res)) // On récupère le résultat dans le tableau final
+					{
+					$reponse['id_q'][] = $val['id_q'];
+					$reponse['id_r'][] = $val['id_r'];
+					$reponse['description'][] = $val['description'];
+					}
+					mysqli_free_result($res); // On libère la variable result
 
-    }*/
+					$query= 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q='.$id.' AND type_rep=0 AND R.id_r=RP.id_r'; //Requête pour récupérer les réponses fausses de la question 
+					if($res = mysqli_query($link, $query ))// On lance la requete
+					{
+						$aux = array(); // On creer ou vide le tableau aux
+						while($val = mysqli_fetch_assoc($res)) // On récupère le résultat dans le tableau aux
+						{
+							$aux['id_q'][] = $val['id_q'];
+							$aux['id_r'][] = $val['id_r'];
+							$aux['description'][] = $val['description'];
+						}
+						mysqli_free_result($res); // On libère la variable result
+						$tab_alea=array_rand($aux['id_r'], $nb_rep); //On selectionne parmis les réponses fausse le nombre calculer plus tot $nb_rep 
+						foreach($tab_alea as $cle) //On remplis le tableau final avec les réponses fausses
+						{
+							$reponse['id_q'][] = $aux['id_q'][$cle];
+							$reponse['id_r'][] = $aux['id_r'][$cle];
+							$reponse['description'][] = $aux['description'][$cle];
+						}
+					}
+
+				}else //Sinon on récupère directement 4 réponse fausse en utilisant la meme méthode qu'en haut
+				{
+					$query= 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q='.$id.' AND type_rep=0 AND R.id_r=RP.id_r'; //Requête pour récupérer les réponses fausses de la question 
+					if($res = mysqli_query($link, $query ))// On lance la requete
+					if($res = mysqli_query($link, $query ))// On lance la requete
+					{
+						$aux = array(); // On creer ou vide le tableau aux
+						while($val = mysqli_fetch_assoc($res)) // On récupère le résultat dans le tableau aux
+						{
+							$aux['id_q'][] = $val['id_q'];
+							$aux['id_r'][] = $val['id_r'];
+							$aux['description'][] = $val['description'];
+						}
+						mysqli_free_result($res); // On libère la variable result
+						$tab_alea=array_rand($aux['id_r'], 4); //On selectionne 4 réponses parmis les réponses fausse 
+						foreach($tab_alea as $cle)//On remplis le tableau final avec les réponses fausses
+						{
+							$reponse['id_q'][] = $aux['id_q'][$cle];
+							$reponse['id_r'][] = $aux['id_r'][$cle];
+							$reponse['description'][] = $aux['description'][$cle];
+						}
+					}
+				}
+				
+			}
+			
+	    	return $reponse;// On rend le tableau
+    	}
+    }
