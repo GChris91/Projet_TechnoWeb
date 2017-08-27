@@ -48,7 +48,7 @@
 
     }
 
-	function is_user( $nom_util, $mot_de_passe ) //Verifie si la personne est un Utilisateur  grace a son Nom d'Utilisateur et son Mot de Passe
+	function is_user($nom_util, $mot_de_passe) //Verifie si la personne est un Utilisateur  grace a son Nom d'Utilisateur et son Mot de Passe
 	{
 		$isuser = False ; //Initialisation du booleen qui accepte ou non le nom d'utilisateur et mot de passe
 		$link = open_database_connection(); //Connexion a la base de données
@@ -63,7 +63,7 @@
 		return $isuser; // On rend un BOOLEEN
 	}
 
-	function is_admin( $nom_util, $mot_de_passe ) //Verifie si l'utilisateur est un admin grace a son Nom d'Utilisateur et son Mot de Passe
+	function is_admin($nom_util, $mot_de_passe) //Verifie si l'utilisateur est un admin grace a son Nom d'Utilisateur et son Mot de Passe
 	{
 		$isadmin = False ; //Initialisation du booleen qui accepte ou non le nom d'utilisateur et mot de passe
 		$link = open_database_connection(); //Connexion a la base de données
@@ -78,7 +78,7 @@
 		return $isadmin; // On rend un BOOLEEN
 	}
 
-	function is_ban( $nom_util, $mot_de_passe ) //Verifie si l'utilisateur est un admin grace a son Nom d'Utilisateur et son Mot de Passe
+	function is_ban($nom_util, $mot_de_passe) //Verifie si l'utilisateur est un admin grace a son Nom d'Utilisateur et son Mot de Passe
 	{
 		$isadmin = False ; //Initialisation du booleen qui accepte ou non le nom d'utilisateur et mot de passe
 		$link = open_database_connection(); //Connexion a la base de données
@@ -93,7 +93,7 @@
 		return $isadmin; // On rend un BOOLEEN
 	}
 
-	function sign_up($nom, $prenom, $email, $nom_util, $mot_de_passe, $mot_de_passe_confime, $nom_fil, $option_sport, $nom_univ )  // Permet d'envoyer les données d'inscription a la Base de données
+	function sign_up($nom, $prenom, $email, $nom_util, $mot_de_passe, $mot_de_passe_confime, $nom_fil, $option_sport, $nom_univ)  // Permet d'envoyer les données d'inscription a la Base de données
 	{
 		$link = open_database_connection();		//Connexion a la base de données
 		$id = cherche_id($nom_util); //On verifie si le nom d'utilisateur existe déja
@@ -120,11 +120,11 @@
 				mysqli_query($link, $query ); //On lance la requete
 			}else
 			{
-				echo "Erreur, nom d'utilisateur déjà présent";
+				return "Erreur, nom d'utilisateur déjà présent";
 			}
 		}else
 		{
-			echo"Erreur, mots_de pase incohérent";
+			return "Erreur, mots de pase incohérent";
 		}
 		
 
