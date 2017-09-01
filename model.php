@@ -2,6 +2,13 @@
 	
 	function open_database_connection() //Permet de se connecter avec la Base de données
 	{
+		$link = mysqli_connect('localhost', 'user', 'KXDz1nnMclEoR1eK', 'bdd_serious_game')or die("Impossible de se connecter : " . mysql_error());
+		mysqli_set_charset ($link, "utf8");
+		return $link;
+	}
+
+	function open_database_admin_connection() //Permet de se connecter avec la Base de données
+	{
 		$link = mysqli_connect('localhost', 'root', '', 'bdd_serious_game')or die("Impossible de se connecter : " . mysql_error());
 		mysqli_set_charset ($link, "utf8");
 		return $link;
@@ -15,16 +22,39 @@
 	function cherche_id($nom_util) // Cherche l'id d'un utilisateur en fonction de son nom d'utilisateur
     {
     	$link = open_database_connection(); //Connexion a la base de données
-    	$query= 'SELECT id_util FROM utilisateur WHERE nom_util="'.$nom_util.'"';//Requete pour récupérer l'id utilisateur a partir du nom d'utilisateur
+    	if($query= mysqli_prepare ($link, 'SELECT id_util FROM utilisateur WHERE nom_util=?'))//On prépare la requête
+    	{
+    		if(mysqli_stmt_bind_param($query, 's', $nom_util))// On lie les variables d'entrer à la requête
+	    	{
+	    		if(mysqli_stmt_execute($query))// On lance la requête
+	    		{
+	    			if(!mysqli_stmt_bind_result($query, $id_util))// On prépare les variables qui récupèrent le résultat
+	    			{
+	    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+	    			}
+	    		}else
+	    		{
+	    			exit('Erreur lors de l\'execution de la commande SQL');
+	    		}	
+	    	}else
+	    	{
+	    		exit('Erreur lors du lien des variables à la commande SQL');
+	    	}
+    	}else
+    	{
+	    	exit('Erreur lors de la création la commande SQL');
+    	}
 
-    	$id_util = NULL;
-
-    	if($result = mysqli_query($link, $query ))// On lance la requete
-		{
-			$res = mysqli_fetch_assoc($result);// On récupère le résultat dans un tableau
-			$id_util = $res['id_util'];
-		}
-
+    	if(mysqli_stmt_store_result($query))
+    	{
+    		mysqli_stmt_fetch($query) ;//On récupère le résultat
+    	}else
+    	{
+    		exit('Erreur lors de la sauvegarde du resultat');
+    	}
+    	
+    	mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+    	mysqli_stmt_close($query);// On ferme la requête préparé	
 		close_database_connection($link);  // On se deconnecte de la BDD
 
 		return $id_util;// On rend un entier ou NULL si on ne le trouve pas
@@ -33,18 +63,90 @@
     function liste_filiere() //Requete pour recuperer tout les noms de fillière
     {
     	$link = open_database_connection(); //Connexion a la base de données
-    	$query= 'SELECT nom_fil FROM filiere';//Requete pour récupérer tout  les noms de fillière
-    	$result = mysqli_query($link, $query ); // On lance la requete
-		if(mysqli_num_rows($result)) //On verifie si la requete a rendue quelque chose
-		{
-			while($val = mysqli_fetch_assoc($result)) // On récupère le résultat dans un tableau
+    	if($query= mysqli_prepare ($link, 'SELECT id_fil, nom_fil FROM filiere'))//On prépare la requête
+    	{
+    		if(mysqli_stmt_execute($query))// On lance la requête
+    		{
+    			if(!mysqli_stmt_bind_result($query, $id_fil, $nom_fil))// On prépare les variables qui récupèrent le résultat
+    			{
+    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+    			}
+    		}else
+    		{
+    			exit('Erreur lors de l\'execution de la commande SQL');
+    		}	
+    	}else
+    	{
+    		exit('Erreur lors de la création la commande SQL');
+    	}
+
+    	if(mysqli_stmt_store_result($query))
+    	{
+    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
 			{
-			$liste[] = $val['nom_fil'];
+				while(mysqli_stmt_fetch($query)) // On récupère le résultat dans un tableau
+				{
+					$liste['id_fil'][] = $id_fil;
+					$liste['nom_fil'][] = $nom_fil;
+				}
+			}else
+			{
+				$liste==NULL;
 			}
-		}
-		mysqli_free_result( $result ); // On libère la variable result
+    	}else
+    	{
+    		exit('Erreur lors de la sauvegarde du resultat');
+    	}
+
+    	mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+		mysqli_stmt_close($query);// On ferme la requête préparé
 		close_database_connection($link); // On se deconnecte de la BDD
-		return $liste; // On rend un tableau indicé
+		return $liste; // On rend un tableau nominal de tableau indicé
+
+    }
+
+    function liste_matiere() //Requete pour recuperer tout les noms de fillière
+    {
+    	$link = open_database_connection(); //Connexion a la base de données
+    	if($query= mysqli_prepare ($link, 'SELECT * FROM matiere'))//On prépare la requête
+    	{
+    		if(mysqli_stmt_execute($query))// On lance la requête
+    		{
+    			if(!mysqli_stmt_bind_result($query, $id_mat, $titre_mat))// On prépare les variables qui récupèrent le résultat
+    			{
+    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+    			}
+    		}else
+    		{
+    			exit('Erreur lors de l\'execution de la commande SQL');
+    		}	
+    	}else
+    	{
+    		exit('Erreur lors de la création la commande SQL');
+    	}
+
+    	if(mysqli_stmt_store_result($query))
+    	{
+    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+			{
+				while(mysqli_stmt_fetch($query)) // On récupère le résultat dans un tableau
+				{
+					echo $liste['id_mat'][] = $id_mat;
+					 echo $liste['titre_mat'][] = $titre_mat;
+				}
+			}else
+			{
+				$liste==NULL;
+			}
+    	}else
+    	{
+    		exit('Erreur lors de la sauvegarde du resultat');
+    	}
+
+    	mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+		mysqli_stmt_close($query);// On ferme la requête préparé
+		close_database_connection($link); // On se deconnecte de la BDD
+		return $liste; // On rend un tableau nominal de tableau indicé
 
     }
 
@@ -52,48 +154,139 @@
 	{
 		$isuser = False ; //Initialisation du booleen qui accepte ou non le nom d'utilisateur et mot de passe
 		$link = open_database_connection(); //Connexion a la base de données
-		$query= 'SELECT nom_util FROM utilisateur WHERE nom_util="'.$nom_util.'" and mot_de_passe="'.$mot_de_passe.'"';//Requete pour verifier le nom d'utilisateur et le mot de passe
-		$result = mysqli_query($link, $query ); // On lance la requete
-		if(mysqli_num_rows($result)) //On verifie si la requete a rendue quelque chose
-		{
-			$isuser = True; //La personne est un utilisateur
-		}
-		mysqli_free_result( $result ); // On libère la variable result
+		if($query= mysqli_prepare ($link, 'SELECT id_util FROM utilisateur WHERE nom_util=? AND mot_de_passe=?'))//On prépare la requête
+    	{
+    		if(mysqli_stmt_bind_param($query, 'ss', $nom_util, $mot_de_passe))// On lie les variables d'entrer à la requête
+	    	{
+	    		if(mysqli_stmt_execute($query))// On lance la requête
+	    		{
+	    			if(!mysqli_stmt_bind_result($query, $id_util))// On prépare les variables qui récupèrent le résultat
+	    			{
+	    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+	    			}
+	    		}else
+	    		{
+	    			exit('Erreur lors de l\'execution de la commande SQL');
+	    		}	
+	    	}else
+	    	{
+	    		exit('Erreur lors du lien des variables à la commande SQL');
+	    	}
+    	}else
+    	{
+    		exit('Erreur lors de la création la commande SQL');
+    	}
+
+    	if(mysqli_stmt_store_result($query))
+    	{
+    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+			{
+				$isuser = True; //La personne est un utilisateur
+			}
+
+    	}else
+    	{
+    		exit('Erreur lors de la sauvegarde du resultat');
+    	}
+
+		mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+		mysqli_stmt_close($query);// On ferme la requête préparé
 		close_database_connection($link); // On se deconnecte de la BDD
 		return $isuser; // On rend un BOOLEEN
 	}
 
 	function is_admin($nom_util, $mot_de_passe) //Verifie si l'utilisateur est un admin grace a son Nom d'Utilisateur et son Mot de Passe
 	{
-		$isadmin = False ; //Initialisation du booleen qui accepte ou non le nom d'utilisateur et mot de passe
+		$isadmin = False ; //Initialisation du booleen qui vérifie si l'utilisateur est un admin
 		$link = open_database_connection(); //Connexion a la base de données
-		$query= 'SELECT nom_util FROM utilisateur WHERE nom_util="'.$nom_util.'" and mot_de_passe="'.$mot_de_passe.'" and admin=1'; //Requete pout verifier le nom d'utilisateur et le mot de passe et le booleen de l'admin
-		$result = mysqli_query($link, $query ); // On lance la requete
-		if(mysqli_num_rows($result)) //On verifie si la requete a rendue quelque chose
-		{
-			$isadmin = True; // L'utilisateur est un admin 
-		}
-		mysqli_free_result( $result ); // On libère la variable result
+		if($query= mysqli_prepare ($link, 'SELECT id_util FROM utilisateur WHERE nom_util=? AND mot_de_passe=? AND admin=1'))//On prépare la requête
+    	{
+    		if(mysqli_stmt_bind_param($query, 'ss', $nom_util, $mot_de_passe))// On lie les variables d'entrer à la requête
+	    	{
+	    		if(mysqli_stmt_execute($query))// On lance la requête
+	    		{
+	    			if(!mysqli_stmt_bind_result($query, $id_util))// On prépare les variables qui récupèrent le résultat
+	    			{
+	    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+	    			}
+	    		}else
+	    		{
+	    			exit('Erreur lors de l\'execution de la commande SQL');
+	    		}	
+	    	}else
+	    	{
+	    		exit('Erreur lors du lien des variables à la commande SQL');
+	    	}
+    	}else
+    	{
+    		exit('Erreur lors de la création la commande SQL');
+    	}
+
+    	if(mysqli_stmt_store_result($query))
+    	{
+    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+			{
+				$isadmin = True; //La personne est un utilisateur
+			}
+
+    	}else
+    	{
+    		exit('Erreur lors de la sauvegarde du resultat');
+    	}
+
+		mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+		mysqli_stmt_close($query);// On ferme la requête préparé
 		close_database_connection($link); // On se deconnecte de la BDD
 		return $isadmin; // On rend un BOOLEEN
 	}
 
-	function is_ban($nom_util, $mot_de_passe) //Verifie si l'utilisateur est un admin grace a son Nom d'Utilisateur et son Mot de Passe
+	function is_ban($nom_util, $mot_de_passe) //Verifie si l'utilisateur est banni grace a son Nom d'Utilisateur et son Mot de Passe
 	{
-		$isadmin = False ; //Initialisation du booleen qui accepte ou non le nom d'utilisateur et mot de passe
+		$isban = False ; //Initialisation du booleen qui vérifie si l'utilisateur est banni
 		$link = open_database_connection(); //Connexion a la base de données
-		$query= 'SELECT nom_util FROM utilisateur WHERE nom_util="'.$nom_util.'" and mot_de_passe="'.$mot_de_passe.'" and banni=1'; //Requete pout verifier le nom d'utilisateur et le mot de passe et si l'utilisateur est banni
-		$result = mysqli_query($link, $query ); // On lance la requete
-		if(mysqli_num_rows($result)) //On verifie si la requete a rendue quelque chose
-		{
-			$isadmin = True; // L'utilisateur est banni
-		}
-		mysqli_free_result( $result ); // On libère la variable result
+		if($query= mysqli_prepare ($link, 'SELECT id_util FROM utilisateur WHERE nom_util=? AND mot_de_passe=? AND banni=1'))//On prépare la requête
+    	{
+    		if(mysqli_stmt_bind_param($query, 'ss', $nom_util, $mot_de_passe))// On lie les variables d'entrer à la requête
+	    	{
+	    		if(mysqli_stmt_execute($query))// On lance la requête
+	    		{
+	    			if(!mysqli_stmt_bind_result($query, $id_util))// On prépare les variables qui récupèrent le résultat
+	    			{
+	    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+	    			}
+	    		}else
+	    		{
+	    			exit('Erreur lors de l\'execution de la commande SQL');
+	    		}	
+	    	}else
+	    	{
+	    		exit('Erreur lors du lien des variables à la commande SQL');
+	    	}
+    	}else
+    	{
+    		exit('Erreur lors de la création la commande SQL');
+    	}
+
+    	if(mysqli_stmt_store_result($query))
+    	{
+    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+			{
+				$isban = True; //La personne est un utilisateur
+			}
+    	}else
+    	{
+    		exit('Erreur lors de la sauvegarde du resultat');
+    	}
+
+		mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+		mysqli_stmt_close($query);// On ferme la requête préparé
 		close_database_connection($link); // On se deconnecte de la BDD
-		return $isadmin; // On rend un BOOLEEN
+		return $isban; // On rend un BOOLEEN
 	}
 
-	function sign_up($nom, $prenom, $email, $nom_util, $mot_de_passe, $mot_de_passe_confime, $nom_fil, $option_sport, $nom_univ)  // Permet d'envoyer les données d'inscription a la Base de données
+	//FAIRE DATE DE NAISSANCE VALIDE\\
+
+	function sign_up($nom, $prenom, $date_naissance, $adresse, $email, $nom_univ, $id_fil, $nom_util, $mot_de_passe, $mot_de_passe_confime, $option_sport)  // Permet d'envoyer les données d'inscription a la Base de données
 	{
 		$link = open_database_connection();		//Connexion a la base de données
 		$id = cherche_id($nom_util); //On verifie si le nom d'utilisateur existe déja
@@ -102,32 +295,68 @@
 		{
 			if($id == NULL)
 			{
-				$link = open_database_connection();		//Connexion a la base de données
-				$query = 'SELECT id_fil FROM filiere WHERE nom_fil="'.$nom_fil.'"'; //Requete pour rechercher l'id de la fillière correspondant au nom de la filière
-				$result = mysqli_query($link, $query );		//On lance la requete
-				if(mysqli_num_rows($result))	//On verifie si la requete a foncionner
-				{
-					$id_filliere = mysqli_fetch_assoc($result);	//On recupère le résultat 
-					$id_fil = (int) $id_filliere["id_fil"];	//On convertit le résultat en entier
+				if($query= mysqli_prepare ($link, 'INSERT INTO utilisateur (nom, prenom, date_naissance, adresse, email, nom_univ, id_fil, nom_util, mot_de_passe, option_sport) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'))//On prépare la requête
+		    	{
+		    		if(mysqli_stmt_bind_param($query, 'ssssssdssd', $nom, $prenom, $date_naissance, $adresse, $email, $nom_univ, $id_fil, $nom_util, $mot_de_passe, $option_sport))// On lie les variables d'entrer à la requête
+			    	{
+			    		if(!mysqli_stmt_execute($query))// On lance la requête
+			    		{
+			    			exit('Erreur lors de l\'execution de la commande SQL');
+			    		}
+			    	}else
+			    	{
+			    		exit('Erreur lors du lien des variables à la commande SQL');
+			    	}
+		    	}else
+		    	{
+		    		exit('Erreur lors de la création la commande SQL');
+		    	}
 
-				}
-				mysqli_free_result($result); // On libère la variable result
-				$query = 'INSERT INTO utilisateur (nom, prenom, email, nom_util, mot_de_passe, id_fil, option_sport, nom_univ) VALUES ("'.$nom.'", "'.$prenom.'", "'.$email.'", "'.$nom_util.'", "'.$mot_de_passe.'", '.$id_fil.', '.$option_sport.', "'.$nom_univ.'")'; //Requete pour ajouter les informations du nouvelle utilisateur a la BDD
-				mysqli_query($link, $query ); //On lance la requete
+		    	if(mysqli_stmt_store_result($query))
+		    	{
+		    		if(!mysqli_stmt_affected_rows($query)) //On verifie si la requete a bien ajouter une ligne
+					{
+						return "Erreur, l'inscription n'a pas abouti dans la base de données"; //La personne est un utilisateur
+					}
+
+		    	}else
+		    	{
+		    		exit('Erreur lors de la sauvegarde du resultat');
+		    	}
+
+		    	mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+				mysqli_stmt_close($query);// On ferme la requête préparé
 
 				$id_util=cherche_id($nom_util);
-				$query = 'INSERT INTO a_un_score_de(id_util, id_mat) SELECT '.$id_util.' AS id_util, id_mat FROM matiere';//Requete pour initialiser les scores de l'utilisateur a 0
-				mysqli_query($link, $query ); //On lance la requete
+
+				if($query= mysqli_prepare ($link, 'INSERT INTO a_un_score_de(id_util, id_mat) SELECT ? AS id_util, id_mat FROM matiere'))//On prépare la requête
+		    	{
+		    		if(mysqli_stmt_bind_param($query, 'd', $id_util))// On lie les variables d'entrer à la requête
+			    	{
+			    		if(!mysqli_stmt_execute($query))// On lance la requête
+			    		{
+			    			exit('Erreur lors de l\'execution de la commande SQL');
+			    		}
+			    	}else
+			    	{
+			    		exit('Erreur lors du lien des variables à la commande SQL');
+			    	}
+		    	}else
+		    	{
+		    		exit('Erreur lors de la création la commande SQL');
+		    	}
+
+		    	mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+				mysqli_stmt_close($query);// On ferme la requête préparé
+
 			}else
 			{
 				return "Erreur, nom d'utilisateur déjà présent";
 			}
 		}else
 		{
-			return "Erreur, mots de pase incohérent";
+			return "Erreur, mots de passe incohérent";
 		}
-		
-
 
 		close_database_connection($link); // On se deconnecte de la BDD
 	}
@@ -172,168 +401,407 @@
         }
     }
 
-    function prepare_test($nom_util, $mot_de_passe, $nom_mat) // récupère les id des questions auquel un utilisateur n'a pas répondu en fonction de la matière
+    function prepare_test($nom_util, $id_mat) // récupère les id des questions auquel un utilisateur n'a pas répondu en fonction de l'id de la matière choisie
     {
     	$link = open_database_connection(); //Connexion a la base de données
-
-		$query= 'SELECT question.id_q FROM question, matiere WHERE matiere.id_mat =question.id_mat AND titre_mat = "'.$nom_mat.'" AND question.id_q NOT IN(SELECT question.id_q FROM question, matiere, a_repondue, utilisateur WHERE matiere.id_mat=question.id_mat AND question.id_q=a_repondue.id_q AND utilisateur.id_util =a_repondue.id_util AND titre_mat="'.$nom_mat.'" AND utilisateur.nom_util="'.$nom_util.'" AND utilisateur.mot_de_passe="'.$mot_de_passe.'") LIMIT 10'; // Requete pour recuperer les question dans une matiere auquel l'utilisateur n'a jamais repondu
+    	$id_util = cherche_id($nom_util);
 		 
-		if($result = mysqli_query($link, $query ))// On lance la requete
+		if($id_util != NULL)
 		{
-			while($val = mysqli_fetch_assoc($result)) // On récupère le résultat dans un tableau
-			{
-			$question[] = $val['id_q'];
-			}
-		}
+			if($query= mysqli_prepare ($link, 'SELECT id_q FROM question WHERE id_mat =? AND id_q NOT IN(SELECT question.id_q FROM question, a_repondue WHERE question.id_q=a_repondue.id_q AND id_util =? AND id_mat=?)'))//On prépare la requête
+	    	{
+	    		if(mysqli_stmt_bind_param($query, 'ddd', $id_mat, $id_util, $id_mat))// On lie les variables d'entrer à la requête
+		    	{
+		    		if(mysqli_stmt_execute($query))// On lance la requête
+		    		{
+		    			if(!mysqli_stmt_bind_result($query, $id_q))// On prépare les variables qui récupèrent le résultat
+		    			{
+		    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+		    			}
+		    		}else
+		    		{
+		    			exit('Erreur lors de l\'execution de la commande SQL');
+		    		}	
+		    	}else
+		    	{
+		    		exit('Erreur lors du lien des variables à la commande SQL');
+		    	}
+	    	}else
+	    	{
+	    		exit('Erreur lors de la création la commande SQL');
+	    	}
 
-		mysqli_free_result($result); // On libère la variable result
+	    	if(mysqli_stmt_store_result($query))
+	    	{
+	    		if(mysqli_stmt_num_rows($query) >= 5) //On verifie si la requete a rendue quelque chose
+				{
+					while(mysqli_stmt_fetch($query)) // On récupère le résultat dans un tableau
+					{
+						$liste[] = $id_q;
+					}
+
+				}else
+				{
+					return 'Nombre de question insuffisant pour faire un Test';
+				}
+
+	    	}else
+	    	{
+	    		exit('Erreur lors de la sauvegarde du resultat');
+	    	}
+		}else
+		{
+			exit('Nom d\'Utilisateur non reconnu');
+		}	
+		
+
+		mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+		mysqli_stmt_close($query);// On ferme la requête préparé
+
+		$tab_alea=array_rand($liste, 5); //On selectionne parmis les questions trouvée 10 question au hasard
+
+		foreach ($tab_alea as $cle) 
+		{
+			$question[]=$liste[$cle];
+		}
 
 		close_database_connection($link);  // On se deconnecte de la BDD
 
 		return $question; // On rend un tableau indicé
     }
 
-    function prepare_defi($nom_util, $mot_de_passe, $nom_mat) // récupère les id des questions auquel un utilisateur n'a pas répondu en fonction de la matière
+    function prepare_defi($nom_util, $id_mat) // récupère les id des questions auquel un utilisateur n'a pas répondu en fonction de la matière
     {
     	$link = open_database_connection(); //Connexion a la base de données
 
-		$query= 'SELECT question.id_q FROM question, matiere, a_repondue, utilisateur WHERE matiere.id_mat=question.id_mat AND question.id_q=a_repondue.id_q AND utilisateur.id_util =a_repondue.id_util AND titre_mat="'.$nom_mat.'" AND utilisateur.nom_util="'.$nom_util.'" AND utilisateur.mot_de_passe="'.$mot_de_passe.'"'; // Requete pour recuperer les question dans une matiere auquel l'utilisateur a deja repondu
+		$id_util = cherche_id($nom_util);
 		 
-		if($result = mysqli_query($link, $query ))// On lance la requete
+		if($id_util != NULL)
 		{
-			while($val = mysqli_fetch_assoc($result)) // On récupère le résultat dans un tableau
-			{
-			$question[] = $val['id_q'];
-			}
+			if($query= mysqli_prepare ($link, 'SELECT question.id_q FROM question, a_repondue WHERE question.id_q=a_repondue.id_q AND id_util =? AND id_mat=?'))//On prépare la requête
+	    	{
+	    		if(mysqli_stmt_bind_param($query, 'ddd', $id_mat, $id_util, $id_mat))// On lie les variables d'entrer à la requête
+		    	{
+		    		if(mysqli_stmt_execute($query))// On lance la requête
+		    		{
+		    			if(!mysqli_stmt_bind_result($query, $id_q))// On prépare les variables qui récupèrent le résultat
+		    			{
+		    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+		    			}
+		    		}else
+		    		{
+		    			exit('Erreur lors de l\'execution de la commande SQL');
+		    		}	
+		    	}else
+		    	{
+		    		exit('Erreur lors du lien des variables à la commande SQL');
+		    	}
+	    	}else
+	    	{
+	    		exit('Erreur lors de la création la commande SQL');
+	    	}
+
+	    	if(mysqli_stmt_store_result($query))
+	    	{
+	    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+				{
+					while(mysqli_stmt_fetch($query)) // On récupère le résultat dans un tableau
+					{
+						$question[] = $id_q;
+					}
+
+				}else
+				{
+					return 'Aucune question trouvée';
+				}
+
+	    	}else
+	    	{
+	    		exit('Erreur lors de la sauvegarde du resultat');
+	    	}
+		}else
+		{
+			exit('Nom d\'Utilisateur non reconnu');
 		}
 
-
-		mysqli_free_result($result); // On libère la variable result
+		mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+		mysqli_stmt_close($query);// On ferme la requête préparé
 
 		close_database_connection($link);  // On se deconnecte de la BDD
 
 		return $question; // On rend le tableau indicé
     }
 
-    function recup_1_description_question($id_q)
+    function recup_1_description_question($id_q) // Transforme un id de question en un tableau d'énoncé des même questions en conservant son id
     {
-    	if($id_q != NULL && $id_q != 0)
-    	{
-    		$link = open_database_connection(); //Connexion a la base de données
-	    	$query= 'SELECT id_q, description FROM question Q WHERE id_q='.id_q.'';
-	    	if($result = mysqli_query($link, $query ))// On lance la requete
-				{
-					$val = mysqli_fetch_assoc($result); // On récupère le résultat dans un tableau
-					$question['id_q'] = $val['id_q'];
-					$question['description'] = $val['description'];
-					mysqli_free_result($result); // On libère la variable result
-				}
+		$link = open_database_connection(); //Connexion a la base de données
 
-				close_database_connection($link);  // On se deconnecte de la BDD
-				
-		    	return $question;// On rend un tableau nominal
+		if($query= mysqli_prepare ($link, 'SELECT id_q, description FROM question Q WHERE id_q=?'))//On prépare la requête
+    	{
+    		if(mysqli_stmt_bind_param($query, 'd', $id_q))// On lie les variables d'entrer à la requête
+	    	{
+	    		if(mysqli_stmt_execute($query))// On lance la requête
+	    		{
+	    			if(!mysqli_stmt_bind_result($query, $id_q, $description))// On prépare les variables qui récupèrent le résultat
+	    			{
+	    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+	    			}
+	    		}else
+	    		{
+	    			exit('Erreur lors de l\'execution de la commande SQL');
+	    		}	
+	    	}else
+	    	{
+	    		exit('Erreur lors du lien des variables à la commande SQL');
+	    	}
+    	}else
+    	{
+    		exit('Erreur lors de la création la commande SQL');
     	}
+
+    	if(mysqli_stmt_store_result($query))
+    	{
+    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+			{
+				mysqli_stmt_fetch($query); // On récupère le résultat dans un tableau
+				$question['id_q'] = $id_q;
+				$question['description'] = $description;
+			}else
+			{
+				return 'Id_question Inconnu';
+			}
+    	}else
+    	{
+    		exit('Erreur lors de la sauvegarde du resultat');
+    	}
+
+    	mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+		mysqli_stmt_close($query);// On ferme la requête préparé
+
+		close_database_connection($link);  // On se deconnecte de la BDD
+			
+	    return $question;// On rend un tableau nominal
     }
 
-    function recup_description_question_multi($tab_id_q) // Transforme un tableau d'id de question en un tableau d'énoncé des même questions en conservant leurs id
+    function recup_description_question_multi($tab_id_q) // Transforme un tableau d'id de question en un tableau d'énoncés des même questions en conservant leurs id
     {
-    	if($tab_id_q != NULL)
+    	$link = open_database_connection(); //Connexion a la base de données
+    	$ch=implode(', ',$tab_id_q);
+		if($query= mysqli_prepare ($link, 'SELECT id_q, description FROM question Q WHERE Q.id_q IN ('.$ch.')'))//On prépare la requête
     	{
-    		$link = open_database_connection(); //Connexion a la base de données
-	    	$query= 'SELECT id_q, description FROM question Q WHERE Q.id_q IN ('.implode(',',$tab_id_q).')'; //requete pour récuperer la description des questions implode permet de transformer un tableau en une table utilisable dans les requêtes SQL
-	    	if($result = mysqli_query($link, $query ))// On lance la requete
+    		if(mysqli_stmt_execute($query))// On lance la requête
+    		{
+    			if(!mysqli_stmt_bind_result($query, $id_q, $description))// On prépare les variables qui récupèrent le résultat
+    			{
+    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+    			}
+    		}else
+    		{
+    			exit('Erreur lors de l\'execution de la commande SQL');
+    		}	
+    	}else
+    	{
+    		exit('Erreur lors de la création la commande SQL');
+    	}
+
+    	if(mysqli_stmt_store_result($query))
+    	{
+    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
 			{
-				while($val = mysqli_fetch_assoc($result)) // On récupère le résultat dans un tableau
+				while(mysqli_stmt_fetch($query)) // On récupère le résultat dans un tableau
 				{
-				$question['id_q'][] = $val['id_q'];
-				$question['description'][] = $val['description'];
+					$question['id_q'][] = $id_q;
+					$question['description'][] = $description;
 				}
-				mysqli_free_result($result); // On libère la variable result
+
+			}else
+			{
+				return 'Id_questions Inconnu';
 			}
+    	}else
+    	{
+    		exit('Erreur lors de la sauvegarde du resultat');
+    	}
+
+    	mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+		mysqli_stmt_close($query);// On ferme la requête préparé
 
 			close_database_connection($link);  // On se deconnecte de la BDD
 			
 	    	return $question;// On rend un tableau nominal de tableau indicé
-    	}
     }
 
     function recup_1_rep($id_q)
     {
+    	$reponse=NULL;
+
 		if($id_q != NULL)
     	{
-    		$reponse=NULL;
     		$link = open_database_connection(); //Connexion a la base de données
 
-			$query= 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q='.$id_q.' AND type_rep=1 AND R.id_r=RP.id_r'; //Requête pour récupérer la ou les réponses vrai de la question 
-			if($result = mysqli_query($link, $query ))// On lance la requete
-			{
-				$nb_rep=4-mysqli_num_rows($result); //si il y a des réponse vrai on calcule le nombre de réponse fausse qu'il faudrat ajouter
-				while($val = mysqli_fetch_assoc($result)) // On récupère le résultat de la requete dans le tableau final
-				{
-				$reponse['id_q'][] = $val['id_q'];
-				$reponse['id_r'][] = $val['id_r'];
-				$reponse['description'][] = $val['description'];
-				}
-				mysqli_free_result($result); // On libère la variable result
+    		if($query= mysqli_prepare ($link, 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q=? AND type_rep=1 AND R.id_r=RP.id_r'))//On prépare la requête pour récuperer les réponses vrai
+	    	{
+	    		if(mysqli_stmt_bind_param($query, 'd', $id_q))// On lie les variables d'entrer à la requête
+		    	{
+		    		if(mysqli_stmt_execute($query))// On lance la requête
+		    		{
+		    			if(!mysqli_stmt_bind_result($query, $id_q, $id_r, $description))// On prépare les variables qui récupèrent le résultat
+		    			{
+		    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+		    			}
+		    		}else
+		    		{
+		    			exit('Erreur lors de l\'execution de la commande SQL');
+		    		}	
+		    	}else
+		    	{
+		    		exit('Erreur lors du lien des variables à la commande SQL');
+		    	}
+	    	}else
+	    	{
+	    		exit('Erreur lors de la création la commande SQL');
+	    	}
 
-				$query= 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q='.$id.' AND type_rep=0 AND R.id_r=RP.id_r'; //Requête pour récupérer les réponses fausses de la question 
-				if($result = mysqli_query($link, $query ))// On lance la requete
+	    	if(mysqli_stmt_store_result($query))
+	    	{
+	    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
 				{
-					$aux = array(); // On creer ou vide le tableau aux
-					while($val = mysqli_fetch_assoc($result)) // On récupère le résultat dans le tableau aux
+					$nb_rep=4-mysqli_stmt_num_rows($query); //si il y a des réponse vrai on calcule le nombre de réponse fausse qu'il faudrat ajouter
+					while(mysqli_stmt_fetch($query)) // On récupère le résultat de la requete dans le tableau final
 					{
-						$aux['id_q'][] = $val['id_q'];
-						$aux['id_r'][] = $val['id_r'];
-						$aux['description'][] = $val['description'];
+						$reponse['id_q'][] = $id_q;
+						$reponse['id_r'][] = $id_r;
+						$reponse['description'][] = $description;
 					}
 
-					mysqli_free_result($result); // On libère la variable result
+					mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+					mysqli_stmt_close($query);// On ferme la requête préparé
 
-					if(isset($aux['id_q']))
-					{
-						$tab_alea=array_rand($aux['id_r'], $nb_rep); //On selectionne parmis les réponses fausse le nombre calculer plus tot $nb_rep 
-						foreach($tab_alea as $cle) //On remplis le tableau final avec les réponses fausses
+					if($query= mysqli_prepare ($link, 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q=? AND type_rep=0 AND R.id_r=RP.id_r'))//On prépare la requête pour récuperer les réponses fausse
+			    	{
+			    		if(mysqli_stmt_bind_param($query, 'd', $id_q))// On lie les variables d'entrer à la requête
+				    	{
+				    		if(mysqli_stmt_execute($query))// On lance la requête
+				    		{
+				    			if(!mysqli_stmt_bind_result($query, $id_q, $id_r, $description))// On prépare les variables qui récupèrent le résultat
+				    			{
+				    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+				    			}
+				    		}else
+				    		{
+				    			exit('Erreur lors de l\'execution de la commande SQL');
+				    		}	
+				    	}else
+				    	{
+				    		exit('Erreur lors du lien des variables à la commande SQL');
+				    	}
+			    	}else
+			    	{
+			    		exit('Erreur lors de la création la commande SQL');
+			    	}
+
+			    	if(mysqli_stmt_store_result($query))
+			    	{
+			    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
 						{
-							$reponse['id_q'][] = $aux['id_q'][$cle];
-							$reponse['id_r'][] = $aux['id_r'][$cle];
-							$reponse['description'][] = $aux['description'][$cle];
-						}
-					}
-				}
+							$aux = array(); // On creer le tableau aux
+							while(mysqli_stmt_fetch($query)) // On récupère le résultat de la requete dans le tableau final
+							{
+								$aux['id_q'][] = $id_q;
+								$aux['id_r'][] = $id_r;
+								$aux['description'][] = $description;
+							}
 
-			}else //Sinon on récupère directement 4 réponse fausse en utilisant la meme méthode qu'en haut
-			{
-				$query= 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q='.$id.' AND type_rep=0 AND R.id_r=RP.id_r'; //Requête pour récupérer les réponses fausses de la question 
-				if($result = mysqli_query($link, $query ))// On lance la requete
-				if($result = mysqli_query($link, $query ))// On lance la requete
-				{
-					$aux = array(); // On creer ou vide le tableau aux
-					while($val = mysqli_fetch_assoc($result)) // On récupère le résultat dans le tableau aux
-					{
-						$aux['id_q'][] = $val['id_q'];
-						$aux['id_r'][] = $val['id_r'];
-						$aux['description'][] = $val['description'];
-					}
+							$tab_alea=array_rand($aux['id_r'], $nb_rep); //On selectionne parmis les réponses fausse le nombre calculer plus tot $nb_rep 
+							foreach($tab_alea as $cle) //On remplis le tableau final avec les réponses fausses
+							{
+								$reponse['id_q'][] = $aux['id_q'][$cle];
+								$reponse['id_r'][] = $aux['id_r'][$cle];
+								$reponse['description'][] = $aux['description'][$cle];
+							}
 
-					mysqli_free_result($result); // On libère la variable result
-
-					if(isset($aux['id_q']))
-					{
-						$tab_alea=array_rand($aux['id_r'], 4); //On selectionne 4 réponses parmis les réponses fausse 
-						foreach($tab_alea as $cle)//On remplis le tableau final avec les réponses fausses
+						}else
 						{
-							$reponse['id_q'][] = $aux['id_q'][$cle];
-							$reponse['id_r'][] = $aux['id_r'][$cle];
-							$reponse['description'][] = $aux['description'][$cle];
+							return 'Aucune réponse fausse trouvée';
 						}
-					}
-				}
-			}
+			    	}else
+			    	{
+			    		exit('Erreur lors de la sauvegarde du resultat');
+			    	}
 
-			close_database_connection($link);  // On se deconnecte de la BDD
+			    	mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+					mysqli_stmt_close($query);// On ferme la requête préparé
+					
+				}else //Sinon on récupère directement 4 réponse fausse en utilisant la meme méthode qu'en haut
+				{
+					if($query= mysqli_prepare ($link, 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q=? AND type_rep=0 AND R.id_r=RP.id_r'))//On prépare la requête pour récuperer les réponses fausse
+			    	{
+			    		if(mysqli_stmt_bind_param($query, 'd', $id_q))// On lie les variables d'entrer à la requête
+				    	{
+				    		if(mysqli_stmt_execute($query))// On lance la requête
+				    		{
+				    			if(!mysqli_stmt_bind_result($query, $id_q, $id_r, $description))// On prépare les variables qui récupèrent le résultat
+				    			{
+				    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+				    			}
+				    		}else
+				    		{
+				    			exit('Erreur lors de l\'execution de la commande SQL');
+				    		}	
+				    	}else
+				    	{
+				    		exit('Erreur lors du lien des variables à la commande SQL');
+				    	}
+			    	}else
+			    	{
+			    		exit('Erreur lors de la création la commande SQL');
+			    	}
+
+			    	if(mysqli_stmt_store_result($query))
+			    	{
+			    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+						{
+							$aux = array(); // On creer le tableau aux
+							while(mysqli_stmt_fetch($query)) // On récupère le résultat de la requete dans le tableau final
+							{
+								$aux['id_q'][] = $id_q;
+								$aux['id_r'][] = $id_r;
+								$aux['description'][] = $description;
+							}
+
+							$tab_alea=array_rand($aux['id_r'], 4); //On selectionne parmis les réponses fausse le nombre calculer plus tot $nb_rep 
+							foreach($tab_alea as $cle) //On remplis le tableau final avec les réponses fausses
+							{
+								$reponse['id_q'][] = $aux['id_q'][$cle];
+								$reponse['id_r'][] = $aux['id_r'][$cle];
+								$reponse['description'][] = $aux['description'][$cle];
+							}
+
+						}else
+						{
+							return 'Aucune réponse fausse trouvée';
+						}
+			    	}else
+			    	{
+			    		exit('Erreur lors de la sauvegarde du resultat');
+			    	}
+
+			    	mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+					mysqli_stmt_close($query);// On ferme la requête préparé
+				}
+	    	}else
+	    	{
+	    		exit('Erreur lors de la sauvegarde du resultat');
+	    	}
+
+		}else
+		{
+			exit('id_q est NULL');
+		}
+
+		close_database_connection($link);  // On se deconnecte de la BDD
 			
-	    	return $reponse;// On rend un tableau nominal de tableau indicé
-    	}
+	    return $reponse;// On rend un tableau nominal de tableau indicé
     }
 
     function recup_rep_multi($tab_id_q)
@@ -342,88 +810,174 @@
     	{
     		$reponse=NULL;
     		$link = open_database_connection(); //Connexion a la base de données
-			foreach($tab_id_q as $id) //Parcours du Tableau des id des questions
+			foreach($tab_id_q as $id_q) //Parcours du Tableau des id des questions
 			{
-				$query= 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q='.$id.' AND type_rep=1 AND R.id_r=RP.id_r'; //Requête pour récupérer la ou les réponses vrai de la question 
-				if($result = mysqli_query($link, $query ))// On lance la requete
-				{
-					$nb_rep=4-mysqli_num_rows($result); //si il y a des réponse vrai on calcule le nombre de réponse fausse qu'il faudrat ajouter
-					while($val = mysqli_fetch_assoc($result)) // On récupère le résultat de la requete dans le tableau final
-					{
-					$reponse['id_q'][] = $val['id_q'];
-					$reponse['id_r'][] = $val['id_r'];
-					$reponse['description'][] = $val['description'];
-					}
-					mysqli_free_result($result); // On libère la variable result
+				if($query= mysqli_prepare ($link, 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q=? AND type_rep=1 AND R.id_r=RP.id_r'))//On prépare la requête pour récuperer les réponses vrai
+		    	{
+		    		if(mysqli_stmt_bind_param($query, 'd', $id_q))// On lie les variables d'entrer à la requête
+			    	{
+			    		if(mysqli_stmt_execute($query))// On lance la requête
+			    		{
+			    			if(!mysqli_stmt_bind_result($query, $id_q, $id_r, $description))// On prépare les variables qui récupèrent le résultat
+			    			{
+			    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+			    			}
+			    		}else
+			    		{
+			    			exit('Erreur lors de l\'execution de la commande SQL');
+			    		}	
+			    	}else
+			    	{
+			    		exit('Erreur lors du lien des variables à la commande SQL');
+			    	}
+		    	}else
+		    	{
+		    		exit('Erreur lors de la création la commande SQL');
+		    	}
 
-					$query= 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q='.$id.' AND type_rep=0 AND R.id_r=RP.id_r'; //Requête pour récupérer les réponses fausses de la question 
-					if($result = mysqli_query($link, $query ))// On lance la requete
+		    	if(mysqli_stmt_store_result($query))
+		    	{
+		    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
 					{
-						$aux = array(); // On creer ou vide le tableau aux
-						while($val = mysqli_fetch_assoc($result)) // On récupère le résultat dans le tableau aux
+						$nb_rep=4-mysqli_stmt_num_rows($query); //si il y a des réponse vrai on calcule le nombre de réponse fausse qu'il faudrat ajouter
+						while(mysqli_stmt_fetch($query)) // On récupère le résultat de la requete dans le tableau final
 						{
-							$aux['id_q'][] = $val['id_q'];
-							$aux['id_r'][] = $val['id_r'];
-							$aux['description'][] = $val['description'];
+							$reponse['id_q'][] = $id_q;
+							$reponse['id_r'][] = $id_r;
+							$reponse['description'][] = $description;
 						}
 
-						mysqli_free_result($result); // On libère la variable result
+						mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+						mysqli_stmt_close($query);// On ferme la requête préparé
 
-						if(isset($aux['id_q']))
-						{
-							$tab_alea=array_rand($aux['id_r'], $nb_rep); //On selectionne parmis les réponses fausse le nombre calculer plus tot $nb_rep 
-							foreach($tab_alea as $cle) //On remplis le tableau final avec les réponses fausses
+						if($query= mysqli_prepare ($link, 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q=? AND type_rep=0 AND R.id_r=RP.id_r'))//On prépare la requête pour récuperer les réponses fausse
+				    	{
+				    		if(mysqli_stmt_bind_param($query, 'd', $id_q))// On lie les variables d'entrer à la requête
+					    	{
+					    		if(mysqli_stmt_execute($query))// On lance la requête
+					    		{
+					    			if(!mysqli_stmt_bind_result($query, $id_q, $id_r, $description))// On prépare les variables qui récupèrent le résultat
+					    			{
+					    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+					    			}
+					    		}else
+					    		{
+					    			exit('Erreur lors de l\'execution de la commande SQL');
+					    		}	
+					    	}else
+					    	{
+					    		exit('Erreur lors du lien des variables à la commande SQL');
+					    	}
+				    	}else
+				    	{
+				    		exit('Erreur lors de la création la commande SQL');
+				    	}
+
+				    	if(mysqli_stmt_store_result($query))
+				    	{
+				    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
 							{
-								$reponse['id_q'][] = $aux['id_q'][$cle];
-								$reponse['id_r'][] = $aux['id_r'][$cle];
-								$reponse['description'][] = $aux['description'][$cle];
-							}
-						}
-					}
+								$aux = array(); // On creer le tableau aux
+								while(mysqli_stmt_fetch($query)) // On récupère le résultat de la requete dans le tableau final
+								{
+									$aux['id_q'][] = $id_q;
+									$aux['id_r'][] = $id_r;
+									$aux['description'][] = $description;
+								}
 
-				}else //Sinon on récupère directement 4 réponse fausse en utilisant la meme méthode qu'en haut
-				{
-					$query= 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q='.$id.' AND type_rep=0 AND R.id_r=RP.id_r'; //Requête pour récupérer les réponses fausses de la question 
-					if($result = mysqli_query($link, $query ))// On lance la requete
-					if($result = mysqli_query($link, $query ))// On lance la requete
-					{
-						$aux = array(); // On creer ou vide le tableau aux
-						while($val = mysqli_fetch_assoc($result)) // On récupère le résultat dans le tableau aux
-						{
-							$aux['id_q'][] = $val['id_q'];
-							$aux['id_r'][] = $val['id_r'];
-							$aux['description'][] = $val['description'];
-						}
+								$tab_alea=array_rand($aux['id_r'], $nb_rep); //On selectionne parmis les réponses fausse le nombre calculer plus tot $nb_rep 
+								foreach($tab_alea as $cle) //On remplis le tableau final avec les réponses fausses
+								{
+									$reponse['id_q'][] = $aux['id_q'][$cle];
+									$reponse['id_r'][] = $aux['id_r'][$cle];
+									$reponse['description'][] = $aux['description'][$cle];
+								}
 
-						mysqli_free_result($result); // On libère la variable result
-
-						if(isset($aux['id_q']))
-						{
-							$tab_alea=array_rand($aux['id_r'], 4); //On selectionne 4 réponses parmis les réponses fausse 
-							foreach($tab_alea as $cle)//On remplis le tableau final avec les réponses fausses
+							}else
 							{
-								$reponse['id_q'][] = $aux['id_q'][$cle];
-								$reponse['id_r'][] = $aux['id_r'][$cle];
-								$reponse['description'][] = $aux['description'][$cle];
+								return 'Aucune réponse fausse trouvée';
 							}
-						}
+				    	}else
+				    	{
+				    		exit('Erreur lors de la sauvegarde du resultat');
+				    	}
+
+				    	mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+						mysqli_stmt_close($query);// On ferme la requête préparé
+						
+					}else //Sinon on récupère directement 4 réponse fausse en utilisant la meme méthode qu'en haut
+					{
+						if($query= mysqli_prepare ($link, 'SELECT id_q, R.id_r,description FROM reponse R,reponse_possible RP WHERE id_q=? AND type_rep=0 AND R.id_r=RP.id_r'))//On prépare la requête pour récuperer les réponses fausse
+				    	{
+				    		if(mysqli_stmt_bind_param($query, 'd', $id_q))// On lie les variables d'entrer à la requête
+					    	{
+					    		if(mysqli_stmt_execute($query))// On lance la requête
+					    		{
+					    			if(!mysqli_stmt_bind_result($query, $id_q, $id_r, $description))// On prépare les variables qui récupèrent le résultat
+					    			{
+					    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+					    			}
+					    		}else
+					    		{
+					    			exit('Erreur lors de l\'execution de la commande SQL');
+					    		}	
+					    	}else
+					    	{
+					    		exit('Erreur lors du lien des variables à la commande SQL');
+					    	}
+				    	}else
+				    	{
+				    		exit('Erreur lors de la création la commande SQL');
+				    	}
+
+				    	if(mysqli_stmt_store_result($query))
+				    	{
+				    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+							{
+								$aux = array(); // On creer le tableau aux
+								while(mysqli_stmt_fetch($query)) // On récupère le résultat de la requete dans le tableau final
+								{
+									$aux['id_q'][] = $id_q;
+									$aux['id_r'][] = $id_r;
+									$aux['description'][] = $description;
+								}
+
+								$tab_alea=array_rand($aux['id_r'], 4); //On selectionne parmis les réponses fausse le nombre calculer plus tot $nb_rep 
+								foreach($tab_alea as $cle) //On remplis le tableau final avec les réponses fausses
+								{
+									$reponse['id_q'][] = $aux['id_q'][$cle];
+									$reponse['id_r'][] = $aux['id_r'][$cle];
+									$reponse['description'][] = $aux['description'][$cle];
+								}
+
+							}else
+							{
+								return 'Aucune réponse fausse trouvée';
+							}
+				    	}else
+				    	{
+				    		exit('Erreur lors de la sauvegarde du resultat');
+				    	}
+
+				    	mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+						mysqli_stmt_close($query);// On ferme la requête préparé
 					}
-				}
-				
+		    	}else
+		    	{
+		    		exit('Erreur lors de la sauvegarde du resultat');
+		    	}
 			}
 
 			close_database_connection($link);  // On se deconnecte de la BDD
 			
 	    	return $reponse;// On rend un tableau nominal de tableau indicé
-    	}
+    	}else
+	    {
+	    	exit('Erreur le tableau d\'id est NULL');
+	    }
     }
 	
-	function verif_rep($id_q, $tab_rep) //PAS FINI\\
-    {
-    	$link = open_database_connection(); //Connexion a la base de données
-    }
-
-    function envoi_defi($nom_util_dem, $nom_util_rec, $id_q)
+    function envoi_defi($nom_util_dem, $nom_util_rec, $id_q) //fonction pour enregistrer un envoi de défi dans la BDD
     {
     	$link = open_database_connection(); //Connexion a la base de données
 
@@ -432,70 +986,195 @@
     		$id_util_dem=cherche_id($nom_util_dem);
 	    	$id_util_rec=cherche_id($nom_util_rec);
 
-	    	$query1= 'SELECT * FROM demande_defi WHERE id_dem = '.$id_util_dem.' AND id_rec = '.$id_util_rec.'';
-	    	$result1=mysqli_query($link, $query1);
-	    	$query2= 'SELECT * FROM demande_defi WHERE id_dem = '.$id_util_rec.' AND id_rec = '.$id_util_dem.'';
-	    	$result2=mysqli_query($link, $query2);
+	    	if($query= mysqli_prepare ($link, 'SELECT * FROM demande_defi WHERE (id_dem =? AND id_rec =?) OR (id_dem =? AND id_rec =?) '))//On prépare la requête
+		    	{
+		    		if(mysqli_stmt_bind_param($query, 'dddd', $id_util_dem, $id_util_rec, $id_util_rec, $id_util_dem))// On lie les variables d'entrer à la requête
+			    	{
+			    		if(mysqli_stmt_execute($query))// On lance la requête
+			    		{
+			    			if(!mysqli_stmt_bind_result($query, $id_util1, $id_util2, $date, $id_que))// On prépare les variables qui récupèrent le résultat
+			    			{
+			    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+			    			}
+			    		}else
+			    		{
+			    			exit('Erreur lors de l\'execution de la commande SQL');
+			    		}	
+			    	}else
+			    	{
+			    		exit('Erreur lors du lien des variables à la commande SQL');
+			    	}
+		    	}else
+		    	{
+		    		exit('Erreur lors de la création la commande SQL');
+		    	}
 
-	    	if(!mysqli_num_rows($result1) && !mysqli_num_rows($result2))
-	    	{
-	    		$query= 'INSERT INTO `demande_defi`(id_dem, id_rec, id_q) VALUES ('.$id_util_dem.','.$id_util_rec.','.$id_q.')';
-	    		mysqli_query($link, $query);
-	    	}else
-	    	{
-	    		echo 'Erreur, demande de défi déjà existante';
-	    	}
+		    	if(mysqli_stmt_store_result($query))
+		    	{
+		    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+					{
+						return 'Erreur, demande de défi déjà existante';	
+					}else
+					{
+						mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+						mysqli_stmt_close($query);// On ferme la requête préparé
 
-	    	
+				    	if($query= mysqli_prepare ($link, 'INSERT INTO `demande_defi`(id_dem, id_rec, id_q) VALUES (?,?,?)'))//On prépare la requête
+				    	{
+				    		if(mysqli_stmt_bind_param($query, 'ddd', $id_util_dem, $id_util_rec, $id_q))// On lie les variables d'entrer à la requête
+					    	{
+					    		if(!mysqli_stmt_execute($query))// On lance la requête
+					    		{
+					    			exit('Erreur lors de l\'execution de la commande SQL');
+					    		}	
+					    	}else
+					    	{
+					    		exit('Erreur lors du lien des variables à la commande SQL');
+					    	}
+				    	}else
+				    	{
+				    		exit('Erreur lors de la création la commande SQL');
+				    	}
+
+					    if(mysqli_stmt_store_result($query))
+				    	{
+				    		if(!mysqli_stmt_affected_rows($query)) //On verifie si la requete a ajouter une ligne dans la BDD
+							{
+								return 'Envoi du défi échoué';
+							}
+				    	}else
+				    	{
+				    		exit('Erreur lors de la sauvegarde du resultat');
+				    	}
+					}
+		    	}else
+		    	{
+		    		exit('Erreur lors de la sauvegarde du resultat');
+		    	} 	
     	}else
 	    {
-	    	echo 'Erreur, les nom d\'utilisateur son egaux';
+	    	return 'Erreur, les nom d\'utilisateur son egaux';
 	    }
 
-    	close_database_connection($link);  // On se deconnecte de la BDD
+
+		close_database_connection($link);  // On se deconnecte de la BDD
+	    return 'Envoi du défi réussi';	    
     }
 
     function envoi_ami($nom_util_dem, $nom_util_rec)
     {
-    	$link = open_database_connection(); //Connexion a la base de données
+	    $link = open_database_connection(); //Connexion a la base de données
 
     	if($nom_util_dem != $nom_util_rec)
     	{
-	    	$id_util_dem=cherche_id($nom_util_dem);
+    		$id_util_dem=cherche_id($nom_util_dem);
 	    	$id_util_rec=cherche_id($nom_util_rec);
-	    	$query1= 'SELECT * FROM demande_ami WHERE id_dem = '.$id_util_dem.' AND id_rec = '.$id_util_rec.'';
-	    	$result1=mysqli_query($link, $query1);
-	    	$query2= 'SELECT * FROM demande_ami WHERE id_dem = '.$id_util_rec.' AND id_rec = '.$id_util_dem.'';
-	    	$result2=mysqli_query($link, $query2);
-	    	if(!mysqli_num_rows($result1) && !mysqli_num_rows($result2))
-	    	{
-	    		$query= 'INSERT INTO `demande_ami`(id_dem, id_rec) VALUES ('.$id_util_dem.','.$id_util_rec.')';
-	    		mysqli_query($link, $query);
-	    	}else
-	    	{
-	    		echo 'Erreur, demande d\'amie déjà existante';
-	    	}
-	    }else
+
+	    	if($query= mysqli_prepare ($link, 'SELECT * FROM demande_ami WHERE (id_dem =? AND id_rec =?) OR (id_dem =? AND id_rec =?) '))//On prépare la requête
+		    	{
+		    		if(mysqli_stmt_bind_param($query, 'dddd', $id_util_dem, $id_util_rec, $id_util_rec, $id_util_dem))// On lie les variables d'entrer à la requête
+			    	{
+			    		if(mysqli_stmt_execute($query))// On lance la requête
+			    		{
+			    			if(!mysqli_stmt_bind_result($query, $id_util1, $id_util2, $date))// On prépare les variables qui récupèrent le résultat
+			    			{
+			    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+			    			}
+			    		}else
+			    		{
+			    			exit('Erreur lors de l\'execution de la commande SQL');
+			    		}	
+			    	}else
+			    	{
+			    		exit('Erreur lors du lien des variables à la commande SQL');
+			    	}
+		    	}else
+		    	{
+		    		exit('Erreur lors de la création la commande SQL');
+		    	}
+
+		    	if(mysqli_stmt_store_result($query))
+		    	{
+		    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+					{
+						return 'Erreur, demande d\'amie déjà existante';	
+					}else
+					{
+						mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+						mysqli_stmt_close($query);// On ferme la requête préparé
+
+				    	if($query= mysqli_prepare ($link, 'INSERT INTO `demande_ami`(id_dem, id_rec) VALUES (?,?)'))//On prépare la requête
+				    	{
+				    		if(mysqli_stmt_bind_param($query, 'dd', $id_util_dem, $id_util_rec))// On lie les variables d'entrer à la requête
+					    	{
+					    		if(!mysqli_stmt_execute($query))// On lance la requête
+					    		{
+					    			exit('Erreur lors de l\'execution de la commande SQL');
+					    		}	
+					    	}else
+					    	{
+					    		exit('Erreur lors du lien des variables à la commande SQL');
+					    	}
+				    	}else
+				    	{
+				    		exit('Erreur lors de la création la commande SQL');
+				    	}
+
+					    if(mysqli_stmt_store_result($query))
+				    	{
+				    		if(!mysqli_stmt_affected_rows($query)) //On verifie si la requete a ajouter une ligne dans la BDD
+							{
+								return 'Envoi de la demande échoué';
+							}
+				    	}else
+				    	{
+				    		exit('Erreur lors de la sauvegarde du resultat');
+				    	}
+					}
+		    	}else
+		    	{
+		    		exit('Erreur lors de la sauvegarde du resultat');
+		    	} 	
+    	}else
 	    {
-	    	echo 'Erreur, les nom d\'utilisateur son egaux';
+	    	return 'Erreur, les nom d\'utilisateur son egaux';
 	    }
 
 	    close_database_connection($link);  // On se deconnecte de la BDD
+	    return 'Envoi de la demande réussi';
     }
 
-    function supprimer_vielle_demande_ami()
+    function supprimer_vielle_demande_ami() //Permet de supprimer les demandes d'ami vielle de 1 mois
     {
-    	$link = open_database_connection(); //Connexion a la base de données
-    	$query='DELETE FROM demande_ami WHERE DATEDIFF(NOW(), date_envoie) > 30';
-    	mysqli_query($link, $query);
+    	$link = open_database_admin_connection(); //Connexion a la base de données
+    	if($query= mysqli_prepare ($link, 'DELETE FROM demande_ami WHERE DATEDIFF(NOW(), date_envoie) > 30'))//On prépare la requête
+		    	{
+			    		if(!mysqli_stmt_execute($query))// On lance la requête
+			    		{
+			    			exit('Erreur lors de l\'execution de la commande SQL');
+			    		}	
+		    	}else
+		    	{
+		    		exit('Erreur lors de la création la commande SQL');
+		    	}
+		mysqli_stmt_close($query);// On ferme la requête préparé
     	close_database_connection($link);  // On se deconnecte de la BDD
     }
 
-    function supprimer_vielle_demande_defi()
+    function supprimer_vielle_demande_defi() //Permet de supprimer les demandes de défis vielle de 1 mois
     {
-    	$link = open_database_connection(); //Connexion a la base de données
-    	$query='DELETE FROM demande_defi WHERE DATEDIFF(NOW(), date_envoie) > 30';
-    	mysqli_query($link, $query);
+    	$link = open_database_admin_connection(); //Connexion a la base de données
+    	if($query= mysqli_prepare ($link, 'DELETE FROM demande_defi WHERE DATEDIFF(NOW(), date_envoie) > 30'))//On prépare la requête
+		    	{
+			    		if(!mysqli_stmt_execute($query))// On lance la requête
+			    		{
+			    			exit('Erreur lors de l\'execution de la commande SQL');
+			    		}
+		    	}else
+		    	{
+		    		exit('Erreur lors de la création la commande SQL');
+		    	}
+		mysqli_stmt_close($query);// On ferme la requête préparé
     	close_database_connection($link);  // On se deconnecte de la BDD
     }
 
@@ -503,31 +1182,98 @@
     {
     	$link = open_database_connection(); //Connexion a la base de données
     	$id_util=cherche_id($nom_util);
-    	$query= 'SELECT * FROM demande_ami WHERE id_rec = '.$id_util.'';
-    	$result= mysqli_query($link, $query);
-    	while($val = mysqli_fetch_assoc($result)) // On récupère le résultat dans le tableau aux
-		{
-			$aux['id_dem'][] = $val['id_dem'];
-			$aux['id_rec'][] = $val['id_rec'];
-			$aux['date_envoie'][] = $val['date_envoie'];
-		}
-		mysqli_free_result($result); // On libère la variable result
+    
+	    	if($query= mysqli_prepare ($link, 'SELECT * FROM demande_ami WHERE id_rec =?'))//On prépare la requête
+		    	{
+		    		if(mysqli_stmt_bind_param($query, 'd', $id_util))// On lie les variables d'entrer à la requête
+			    	{
+			    		if(mysqli_stmt_execute($query))// On lance la requête
+			    		{
+			    			if(!mysqli_stmt_bind_result($query, $id_dem, $id_rec, $date))// On prépare les variables qui récupèrent le résultat
+			    			{
+			    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+			    			}
+			    		}else
+			    		{
+			    			exit('Erreur lors de l\'execution de la commande SQL');
+			    		}	
+			    	}else
+			    	{
+			    		exit('Erreur lors du lien des variables à la commande SQL');
+			    	}
+		    	}else
+		    	{
+		    		exit('Erreur lors de la création la commande SQL');
+		    	}
+
+	    	if(mysqli_stmt_store_result($query))
+	    	{
+	    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+				{
+						while(mysqli_stmt_fetch($query)) // On récupère le résultat dans le tableau aux
+						{
+							$tab['id_dem'][] = $id_dem;
+							$tab['id_rec'][] = $id_rec;
+							$tab['date_envoie'][] =$date;
+						}
+						return $tab;
+				}else
+				{
+					return 'Aucune demande d\'amie recu';
+				}
+	    	}else
+	    	{
+	    		exit('Erreur lors de la sauvegarde du resultat');
+	    	}
     }
 
     function recup_demande_ami_envoyer($nom_util) //Récupère les demande d'ami que l'utilisateur a envoyé
     {
     	$link = open_database_connection(); //Connexion a la base de données
     	$id_util=cherche_id($nom_util);
-    	$query= 'SELECT * FROM demande_ami WHERE id_dem = '.$id_util.'';
-    	$result= mysqli_query($link, $query);
-    	while($val = mysqli_fetch_assoc($result)) // On récupère le résultat dans le tableau aux
-		{
-			$aux['id_dem'][] = $val['id_dem'];
-			$aux['id_rec'][] = $val['id_rec'];
-			$aux['date_envoie'][] = $val['date_envoie'];
-		}
-		mysqli_free_result($result); // On libère la variable result
+    
+	    	if($query= mysqli_prepare ($link, 'SELECT * FROM demande_ami WHERE id_dem =?'))//On prépare la requête
+		    	{
+		    		if(mysqli_stmt_bind_param($query, 'd', $id_util))// On lie les variables d'entrer à la requête
+			    	{
+			    		if(mysqli_stmt_execute($query))// On lance la requête
+			    		{
+			    			if(!mysqli_stmt_bind_result($query, $id_dem, $id_rec, $date))// On prépare les variables qui récupèrent le résultat
+			    			{
+			    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+			    			}
+			    		}else
+			    		{
+			    			exit('Erreur lors de l\'execution de la commande SQL');
+			    		}	
+			    	}else
+			    	{
+			    		exit('Erreur lors du lien des variables à la commande SQL');
+			    	}
+		    	}else
+		    	{
+		    		exit('Erreur lors de la création la commande SQL');
+		    	}
 
+	    	if(mysqli_stmt_store_result($query))
+	    	{
+	    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+				{
+						while(mysqli_stmt_fetch($query)) // On récupère le résultat dans le tableau aux
+						{
+							$tab['id_dem'][] = $id_dem;
+							$tab['id_rec'][] = $id_rec;
+							$tab['date_envoie'][] =$date;
+						}
+						return $tab;
+				}else
+				{
+					return 'Aucune demande d\'amie recu';
+				}
+	    	}else
+	    	{
+	    		exit('Erreur lors de la sauvegarde du resultat');
+	    	}
     }
 
     function accepte_ami($id_util_dem, $id_util_rec)
