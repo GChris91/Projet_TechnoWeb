@@ -1210,12 +1210,15 @@
 	    	{
 	    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
 				{
-						while(mysqli_stmt_fetch($query)) // On récupère le résultat dans le tableau aux
+						while(mysqli_stmt_fetch($query)) // On récupère le résultat dans un tableau
 						{
 							$tab['id_dem'][] = $id_dem;
 							$tab['id_rec'][] = $id_rec;
 							$tab['date_envoie'][] =$date;
 						}
+						mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+						mysqli_stmt_close($query);// On ferme la requête préparé
+    					close_database_connection($link);  // On se deconnecte de la BDD
 						return $tab;
 				}else
 				{
@@ -1232,17 +1235,86 @@
     	$link = open_database_connection(); //Connexion a la base de données
     	$id_util=cherche_id($nom_util);
     
-	    	if($query= mysqli_prepare ($link, 'SELECT * FROM demande_ami WHERE id_dem =?'))//On prépare la requête
+    	if($query= mysqli_prepare ($link, 'SELECT * FROM demande_ami WHERE id_dem =?'))//On prépare la requête
+	    	{
+	    		if(mysqli_stmt_bind_param($query, 'd', $id_util))// On lie les variables d'entrer à la requête
 		    	{
-		    		if(mysqli_stmt_bind_param($query, 'd', $id_util))// On lie les variables d'entrer à la requête
+		    		if(mysqli_stmt_execute($query))// On lance la requête
+		    		{
+		    			if(!mysqli_stmt_bind_result($query, $id_dem, $id_rec, $date))// On prépare les variables qui récupèrent le résultat
+		    			{
+		    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+		    			}
+		    		}else
+		    		{
+		    			exit('Erreur lors de l\'execution de la commande SQL');
+		    		}	
+		    	}else
+		    	{
+		    		exit('Erreur lors du lien des variables à la commande SQL');
+		    	}
+	    	}else
+	    	{
+	    		exit('Erreur lors de la création la commande SQL');
+	    	}
+
+    	if(mysqli_stmt_store_result($query))
+    	{
+    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+			{
+					while(mysqli_stmt_fetch($query)) // On récupère le résultat dans un tableau
+					{
+						$tab['id_dem'][] = $id_dem;
+						$tab['id_rec'][] = $id_rec;
+						$tab['date_envoie'][] =$date;
+					}
+					mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+					mysqli_stmt_close($query);// On ferme la requête préparé
+    				close_database_connection($link);  // On se deconnecte de la BDD
+					return $tab;
+			}else
+			{
+				return 'Aucune demande d\'amie recu';
+			}
+    	}else
+    	{
+    		exit('Erreur lors de la sauvegarde du resultat');
+    	}
+    }
+
+    function accepte_ami($id_util_dem, $id_util_rec)
+   {
+   		$link = open_database_admin_connection(); //Connexion a la base de données
+
+   		if($query= mysqli_prepare ($link, 'DELETE FROM demande_ami WHERE id_dem=? AND id_rec=?'))//On prépare la requête
+	    	{
+	    		if(mysqli_stmt_bind_param($query, 'dd', $id_util_dem, $id_util_rec))// On lie les variables d'entrer à la requête
+		    	{
+		    		if(!mysqli_stmt_execute($query))// On lance la requête
+		    		{
+		    			exit('Erreur lors de l\'execution de la commande SQL');
+		    		}	
+		    	}else
+		    	{
+		    		exit('Erreur lors du lien des variables à la commande SQL');
+		    	}
+	    	}else
+	    	{
+	    		exit('Erreur lors de la création la commande SQL');
+	    	}
+
+
+    	if(mysqli_stmt_store_result($query))
+    	{
+    		if(mysqli_stmt_affected_rows($query)) //On verifie si la requete a rendue quelque chose
+			{
+				mysqli_stmt_close($query);// On ferme la requête préparé
+
+				if($query= mysqli_prepare ($link, 'INSERT INTO liste_ami (id_ami1, id_ami2) VALUES (?,?),(?,?)'))//On prépare la requête
+		    	{
+		    		if(mysqli_stmt_bind_param($query, 'dddd', $id_util_dem, $id_util_rec, $id_util_rec, $id_util_dem))// On lie les variables d'entrer à la requête
 			    	{
-			    		if(mysqli_stmt_execute($query))// On lance la requête
-			    		{
-			    			if(!mysqli_stmt_bind_result($query, $id_dem, $id_rec, $date))// On prépare les variables qui récupèrent le résultat
-			    			{
-			    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
-			    			}
-			    		}else
+			    		if(!mysqli_stmt_execute($query))// On lance la requête
 			    		{
 			    			exit('Erreur lors de l\'execution de la commande SQL');
 			    		}	
@@ -1254,34 +1326,132 @@
 		    	{
 		    		exit('Erreur lors de la création la commande SQL');
 		    	}
+			}else
+			{
+				return 'Erreur, demande d\'amie inexistante';
+			}
+    	}else
+    	{
+    		exit('Erreur lors de la sauvegarde du resultat');
+    	}
+    	mysqli_stmt_close($query);// On ferme la requête préparé
+    	close_database_connection($link);  // On se deconnecte de la BDD
+   }
 
-	    	if(mysqli_stmt_store_result($query))
-	    	{
-	    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
-				{
-						while(mysqli_stmt_fetch($query)) // On récupère le résultat dans le tableau aux
-						{
-							$tab['id_dem'][] = $id_dem;
-							$tab['id_rec'][] = $id_rec;
-							$tab['date_envoie'][] =$date;
-						}
-						return $tab;
-				}else
-				{
-					return 'Aucune demande d\'amie recu';
-				}
-	    	}else
-	    	{
-	    		exit('Erreur lors de la sauvegarde du resultat');
-	    	}
-    }
-
-    function accepte_ami($id_util_dem, $id_util_rec)
+   function recup_info_profil($nom_util) //rend un tableau des données personnel de l'utilisateur donné en entrer
    {
    		$link = open_database_connection(); //Connexion a la base de données
+    	$id_util=cherche_id($nom_util);
 
+   		if($query= mysqli_prepare ($link, 'SELECT nom, prenom, date_naissance, adresse, email, nom_fil, nom_univ, nom_util, titre, niveau, option_sport, admin FROM utilisateur, filiere WHERE filiere.id_fil=utilisateur.id_fil AND id_util =?'))//On prépare la requête
+    	{
+    		if(mysqli_stmt_bind_param($query, 'd', $id_util))// On lie les variables d'entrer à la requête
+	    	{
+	    		if(mysqli_stmt_execute($query))// On lance la requête
+	    		{
+	    			if(!mysqli_stmt_bind_result($query, $nom, $prenom, $date_naissance, $adresse, $email, $nom_fil, $nom_univ, $nom_util, $titre, $niveau, $option_sport, $admin))// On prépare les variables qui récupèrent le résultat
+	    			{
+	    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+	    			}
+	    		}else
+	    		{
+	    			exit('Erreur lors de l\'execution de la commande SQL');
+	    		}	
+	    	}else
+	    	{
+	    		exit('Erreur lors du lien des variables à la commande SQL');
+	    	}
+    	}else
+    	{
+    		exit('Erreur lors de la création la commande SQL');
+    	}
 
+    	if(mysqli_stmt_store_result($query))
+    	{
+    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+			{
+				mysqli_stmt_fetch($query); // On récupère le résultat dans le tableau
+				$tab['nom'] = $nom;
+				$tab['prenom'] = $prenom;
+				$tab['date_naissance'] = $date_naissance;
+				$tab['adresse'] = $adresse;
+				$tab['email'] =$email;
+				$tab['nom_fil'] =$nom_fil;
+				$tab['nom_univ'] =$nom_univ;
+				$tab['nom_util'] =$nom_util;
+				$tab['titre'] =$titre;
+				$tab['niveau'] =$niveau;
+				$tab['option_sport'] =$option_sport;
+				$tab['admin'] =$admin;
+				
+			}else
+			{
+				return 'Utilisateur inconnu';
+			}
+    	}else
+    	{
+    		exit('Erreur lors de la sauvegarde du resultat');
+    	}
+    	
+    	mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+    	mysqli_stmt_close($query);// On ferme la requête préparé
+    	close_database_connection($link);  // On se deconnecte de la BDD
 
+    	return $tab;
+   }
+
+   function recup_note_profil($nom_util)//recupère les notes de l'utilisateur donné en entrer
+   {
+   		$link = open_database_connection(); //Connexion a la base de données
+    	$id_util=cherche_id($nom_util);
+
+   		if($query= mysqli_prepare ($link, 'SELECT titre_mat, nb_point  FROM a_un_score_de, matiere WHERE a_un_score_de.id_mat=matiere.id_mat AND id_util =?'))//On prépare la requête
+    	{
+    		if(mysqli_stmt_bind_param($query, 'd', $id_util))// On lie les variables d'entrer à la requête
+	    	{
+	    		if(mysqli_stmt_execute($query))// On lance la requête
+	    		{
+	    			if(!mysqli_stmt_bind_result($query, $titre_mat, $nb_point))// On prépare les variables qui récupèrent le résultat
+	    			{
+	    				exit('Erreur lors du lien des variables au résultat de la commande SQL');
+	    			}
+	    		}else
+	    		{
+	    			exit('Erreur lors de l\'execution de la commande SQL');
+	    		}	
+	    	}else
+	    	{
+	    		exit('Erreur lors du lien des variables à la commande SQL');
+	    	}
+    	}else
+    	{
+    		exit('Erreur lors de la création la commande SQL');
+    	}
+
+    	if(mysqli_stmt_store_result($query))
+    	{
+    		if(mysqli_stmt_num_rows($query)) //On verifie si la requete a rendue quelque chose
+			{
+				while(mysqli_stmt_fetch($query)) // On récupère le résultat dans un tableau
+					{
+						$tab['titre_mat'][] = $titre_mat;
+						$tab['nb_point'][] = $nb_point;
+					}
+				
+			}else
+			{
+				return 'Aucune demande d\'amie recu';
+			}
+    	}else
+    	{
+    		exit('Erreur lors de la sauvegarde du resultat');
+    	}
+    	
+    	mysqli_stmt_free_result($query);//On libère le résultat de la requête préparé
+    	mysqli_stmt_close($query);// On ferme la requête préparé
+    	close_database_connection($link);  // On se deconnecte de la BDD
+
+    	return $tab;
    }
 
 ?>
